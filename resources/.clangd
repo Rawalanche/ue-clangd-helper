@@ -1,0 +1,8 @@
+Diagnostics:
+  UnusedIncludes: None
+  ClangTidy:
+    FastCheckFilter: Strict # Only allows checks that don't block the UI
+CompileFlags:
+  Add: [-D__INTELLISENSE__, --driver-mode=cl, -fno-delayed-template-parsing] # Added flag for MSVC compatibility speed
+Completion:
+  AllScopes: false

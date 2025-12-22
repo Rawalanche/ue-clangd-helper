@@ -1,0 +1,25 @@
+# Unreal Engine C++ Coding Standards
+# Based on Epic Games' official coding standards
+# https://docs.unrealengine.com/5.3/en-US/epic-cplusplus-coding-standard-for-unreal-engine/
+
+BasedOnStyle: LLVM
+Language: Cpp
+
+# Indentation
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+AccessModifierOffset: -4
+
+# Braces on new lines (Allman)
+BreakBeforeBraces: Allman
+
+# Very long lines, effectively no wrapping
+ColumnLimit: 0
+
+# Pointer/reference alignment like AActor* and FVector&
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Preserve explicit include order
+SortIncludes: false

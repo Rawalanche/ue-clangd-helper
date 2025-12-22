@@ -1,0 +1,46 @@
+{
+  "name": "ue-clangd-helper",
+  "displayName": "UE Clangd Helper",
+  "description": "Unreal Engine helper for Clangd: Automates setup, compile commands, and header refreshing.",
+  "version": "1.0.0",
+  "publisher": "Ludvik Koutny",
+  "engines": { "vscode": "^1.107.0" },
+  "activationEvents": [ "workspaceContains:**/*.uproject" ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ue-clangd-helper.setup",
+        "title": "UE Clangd: Setup Project"
+      },
+      {
+        "command": "ue-clangd-helper.refreshFiles",
+        "title": "UE Clangd: Refresh File Changes (New/Move/Rename)"
+      },
+      {
+        "command": "ue-clangd-helper.refreshHeaders",
+        "title": "UE Clangd: Refresh Header Changes (Fix False Errors)"
+      }
+    ],
+    "configuration": {
+      "title": "UE Clangd Helper",
+      "properties": {
+        "ueClangdHelper.generateConfigs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Generate .clangd and .clang-format files during setup."
+        },
+        "ueClangdHelper.syncCompileCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically copy compile_commands.json from Engine root to Project root after generation."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  }
+}

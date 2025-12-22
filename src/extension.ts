@@ -158,17 +158,46 @@ async function injectTasks(paths: any) {
         }
     ];
 
-    const tasksConfig = vscode.workspace.getConfiguration('tasks');
-    const existingTasks = tasksConfig.get<any[]>('tasks') || [];
-    const finalTasks = [...existingTasks];
+    // Write tasks to .vscode/tasks.json in the project root
+    const vscodeDir = path.join(paths.projectRoot, '.vscode');
+    const tasksJsonPath = path.join(vscodeDir, 'tasks.json');
 
+    // Ensure .vscode directory exists
+    if (!fs.existsSync(vscodeDir)) {
+        fs.mkdirSync(vscodeDir, { recursive: true });
+    }
+
+    // Read existing tasks.json or create default structure
+    let tasksJson: any = {
+        "version": "2.0.0",
+        "tasks": []
+    };
+
+    if (fs.existsSync(tasksJsonPath)) {
+        try {
+            const content = fs.readFileSync(tasksJsonPath, 'utf8');
+            tasksJson = JSON.parse(content);
+            if (!tasksJson.tasks) {
+                tasksJson.tasks = [];
+            }
+        } catch (e) {
+            console.warn('UE Clangd Helper: Failed to parse existing tasks.json, creating new one.', e);
+            tasksJson = { "version": "2.0.0", "tasks": [] };
+        }
+    }
+
+    // Update or add tasks
     newTasks.forEach(nt => {
-        const idx = finalTasks.findIndex(et => et.label === nt.label);
-        if (idx !== -1) finalTasks[idx] = nt;
-        else finalTasks.push(nt);
+        const idx = tasksJson.tasks.findIndex((et: any) => et.label === nt.label);
+        if (idx !== -1) {
+            tasksJson.tasks[idx] = nt;
+        } else {
+            tasksJson.tasks.push(nt);
+        }
     });
 
-    await tasksConfig.update('tasks', finalTasks, vscode.ConfigurationTarget.Workspace);
+    // Write back to tasks.json
+    fs.writeFileSync(tasksJsonPath, JSON.stringify(tasksJson, null, 4), 'utf8');
 }
 
 function getWorkspacePaths() {

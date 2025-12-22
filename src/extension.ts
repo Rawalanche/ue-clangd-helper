@@ -45,7 +45,27 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(cmdSetup, cmdRefreshFiles, cmdRefreshHeaders, taskWatcher);
+    // 5. Watcher: Auto-fix phantom errors on header save
+    let saveWatcher = vscode.workspace.onDidSaveTextDocument(async (savedDocument) => {
+        const config = vscode.workspace.getConfiguration('ueClangdHelper');
+        if (!config.get('autoFixOnSave')) return;
+
+        const projectPaths = getWorkspacePaths();
+        if (!projectPaths) return;
+
+        // Check if it's a header inside the Source folder
+        const isHeader = savedDocument.fileName.endsWith('.h');
+        const isInSource = savedDocument.fileName.includes(path.join(projectPaths.projectRoot, 'Source'));
+
+        if (isHeader && isInSource) {
+            if (hasPhantomErrors(savedDocument.uri)) {
+                // Trigger the compound fix task automatically
+                await triggerTask(TASK_COMPOUND);
+            }
+        }
+    });
+
+    context.subscriptions.push(cmdSetup, cmdRefreshFiles, cmdRefreshHeaders, taskWatcher, saveWatcher);
 }
 
 async function runSetup(context: vscode.ExtensionContext) {
@@ -198,6 +218,24 @@ async function injectTasks(paths: any) {
 
     // Write back to tasks.json
     fs.writeFileSync(tasksJsonPath, JSON.stringify(tasksJson, null, 4), 'utf8');
+}
+
+function hasPhantomErrors(fileUri: vscode.Uri): boolean {
+    const diagnostics = vscode.languages.getDiagnostics(fileUri);
+
+    // We look for errors related to missing .generated.h files or UHT-specific failures
+    // These are identified by clang error codes: ovl_deleted_init and missing_type_specifier
+    return diagnostics.some(diagnostic => {
+        const errorCode = typeof diagnostic.code === 'string'
+            ? diagnostic.code
+            : typeof diagnostic.code === 'object' && diagnostic.code !== null
+                ? String(diagnostic.code.value)
+                : '';
+        return (
+            diagnostic.severity === vscode.DiagnosticSeverity.Error &&
+            (errorCode === 'ovl_deleted_init' || errorCode === 'missing_type_specifier')
+        );
+    });
 }
 
 function getWorkspacePaths() {

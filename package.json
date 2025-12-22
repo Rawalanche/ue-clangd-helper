@@ -2,7 +2,7 @@
   "name": "ue-clangd-helper",
   "displayName": "UE Clangd Helper",
   "description": "Unreal Engine helper for Clangd: Automates setup, compile commands, and header refreshing.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "ludvikkoutny",
   "icon": "icon.png",
   "repository": {
@@ -39,6 +39,11 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically copy compile_commands.json from Engine root to Project root after generation."
+        },
+        "ueClangdHelper.autoFixOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically trigger header refresh when saving a header file with phantom errors (missing .generated.h)."
         }
       }
     }

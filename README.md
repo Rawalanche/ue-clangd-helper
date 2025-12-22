@@ -7,7 +7,7 @@ A minimalistic tool to make Clangd VSCode extension work smoothly with Unreal En
 
 ## Quickstart
 
-1.  **Identify Clang Version**: Visit the Unreal Engine Release Notes for your specific version. Search for the **"IDE Version the Build farm compiles against"** section to find the LLVM Clang version suggested by Epic. If you have multiple engine versions installed, use the LLVM Clang version corresponding to the latest UE version on your machine.
+1.  **Identify Clang Version**: Visit the Unreal Engine Release Notes for your specific version. Search for the **"IDE Version the Build farm compiles against"** section to find the LLVM Clang version suggested by Epic. If you have multiple engine versions installed, use the LLVM Clang version corresponding to the latest UE version on your machine. Then download and install it from https://github.com/llvm/llvm-project/releases
 2.  **Install Clangd**: Install the official [clangd extension](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd) for VS Code.
 3.  **Install This Extension**: Download and install this extension (`.vsix`).
 4.  **Unreal Editor Configuration**:

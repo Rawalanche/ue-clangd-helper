@@ -3,7 +3,12 @@
   "displayName": "UE Clangd Helper",
   "description": "Unreal Engine helper for Clangd: Automates setup, compile commands, and header refreshing.",
   "version": "1.0.0",
-  "publisher": "Ludvik Koutny",
+  "publisher": "ludvikkoutny",
+  "icon": "icon.png",
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/Rawalanche/ue-clangd-helper.git"
+  },
   "engines": { "vscode": "^1.107.0" },
   "activationEvents": [ "workspaceContains:**/*.uproject" ],
   "main": "./out/extension.js",

@@ -2,7 +2,7 @@
   "name": "ue-clangd-helper",
   "displayName": "UE Clangd Helper",
   "description": "Unreal Engine helper for Clangd: Automates setup, compile commands, and header refreshing.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "ludvikkoutny",
   "icon": "icon.png",
   "repository": {

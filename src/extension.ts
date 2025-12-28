@@ -152,7 +152,7 @@ async function injectTasks(paths: any) {
             "label": TASK_GENERATE,
             "type": "shell",
             "command": buildBat,
-            "args": [`${paths.projectName}Editor`, "Win64", "Development", `-project=${uproject}`, "-mode=GenerateClangDatabase", "-game", "-rocket", "-progress"],
+            "args": [`${paths.projectName}Editor`, "Win64", "Development", `-project=${uproject}`, "-mode=GenerateClangDatabase", "-game", "-rocket", "-progress", "-UsePrecompiled"],
             "group": "build",
             "problemMatcher": []
         },

@@ -9,7 +9,7 @@
   "type": "git",
   "url": "https://github.com/Rawalanche/ue-clangd-helper.git"
   },
-  "engines": { "vscode": "^1.107.0" },
+  "engines": { "vscode": "^1.105.1" },
   "activationEvents": [ "workspaceContains:**/*.uproject" ],
   "main": "./out/extension.js",
   "contributes": {

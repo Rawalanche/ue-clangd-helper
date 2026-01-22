@@ -229,7 +229,7 @@ function hasPhantomErrors(fileUri: vscode.Uri): boolean {
         const errorCode = typeof diagnostic.code === 'string'
             ? diagnostic.code
             : typeof diagnostic.code === 'object' && diagnostic.code !== null
-                ? String(diagnostic.code.value)
+                ? String((diagnostic.code as { value?: string }).value ?? '')
                 : '';
         return (
             diagnostic.severity === vscode.DiagnosticSeverity.Error &&

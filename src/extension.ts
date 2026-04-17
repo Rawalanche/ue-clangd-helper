@@ -2,41 +2,39 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// --- Constants ---
 const TASK_GENERATE = "Generate Clang CompileCommands";
 const TASK_UHT = "Refresh UHT Generated Headers";
 const TASK_COMPOUND = "Fix Header False Errors";
 
-export function activate(context: vscode.ExtensionContext) {
+interface WorkspacePaths {
+    projectRoot: string;
+    engineRoot: string;
+    projectName: string;
+}
 
-    // 1. Command A: Setup
-    let cmdSetup = vscode.commands.registerCommand('ue-clangd-helper.setup', async () => {
+export function activate(context: vscode.ExtensionContext) {
+    const cmdSetup = vscode.commands.registerCommand('ue-clangd-helper.setup', async () => {
         await runSetup(context);
     });
 
-    // 2. Command B: Refresh Files (Triggers Generate Task)
-    let cmdRefreshFiles = vscode.commands.registerCommand('ue-clangd-helper.refreshFiles', async () => {
-        const paths = getWorkspacePaths();
+    const cmdRefreshFiles = vscode.commands.registerCommand('ue-clangd-helper.refreshFiles', async () => {
+        const paths = getRequiredWorkspacePaths();
         if (!paths) {
-            showMissingPathsError(); // <--- CHANGE
             return;
         }
         await triggerTask(TASK_GENERATE);
     });
 
-    // 3. Command C: Refresh Headers (Triggers Compound Task)
-    let cmdRefreshHeaders = vscode.commands.registerCommand('ue-clangd-helper.refreshHeaders', async () => {
-        const paths = getWorkspacePaths();
+    const cmdRefreshHeaders = vscode.commands.registerCommand('ue-clangd-helper.refreshHeaders', async () => {
+        const paths = getRequiredWorkspacePaths();
         if (!paths) {
-            showMissingPathsError(); // <--- CHANGE
             return;
         }
         await injectTasks(paths);
         await triggerTask(TASK_COMPOUND);
     });
 
-    // 4. Watcher: Auto-sync compile_commands.json when "Generate" task finishes
-    let taskWatcher = vscode.tasks.onDidEndTask(async (event) => {
+    const taskWatcher = vscode.tasks.onDidEndTask(async (event) => {
         if (event.execution.task.name === TASK_GENERATE) {
             const config = vscode.workspace.getConfiguration('ueClangdHelper');
             if (config.get('syncCompileCommands')) {
@@ -45,24 +43,25 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // 5. Watcher: Auto-fix phantom errors on header save
-    let saveWatcher = vscode.workspace.onDidSaveTextDocument(async (savedDocument) => {
+    const saveWatcher = vscode.workspace.onDidSaveTextDocument(async (savedDocument) => {
         const config = vscode.workspace.getConfiguration('ueClangdHelper');
-        if (!config.get('autoFixOnSave')) return;
+        if (!config.get('autoFixOnSave')) {
+            return;
+        }
 
         const projectPaths = getWorkspacePaths();
-        if (!projectPaths) return;
-
-        // Check if it's a header inside the Source folder
-        const isHeader = savedDocument.fileName.endsWith('.h');
-        const isInSource = savedDocument.fileName.includes(path.join(projectPaths.projectRoot, 'Source'));
-
-        if (isHeader && isInSource) {
-            if (hasPhantomErrors(savedDocument.uri)) {
-                // Trigger the compound fix task automatically
-                await triggerTask(TASK_COMPOUND);
-            }
+        if (!projectPaths) {
+            return;
         }
+
+        const isHeader = savedDocument.fileName.endsWith('.h');
+        const isInSource = isPathInsideDirectory(savedDocument.fileName, path.join(projectPaths.projectRoot, 'Source'));
+
+        if (!isHeader || !isInSource || !hasPhantomErrors(savedDocument.uri)) {
+            return;
+        }
+
+        await triggerTask(TASK_COMPOUND);
     });
 
     context.subscriptions.push(cmdSetup, cmdRefreshFiles, cmdRefreshHeaders, taskWatcher, saveWatcher);
@@ -70,10 +69,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function runSetup(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration('ueClangdHelper');
-    const paths = getWorkspacePaths();
-
+    const paths = getRequiredWorkspacePaths();
     if (!paths) {
-        showMissingPathsError(); // <--- CHANGE
         return;
     }
 
@@ -85,11 +82,11 @@ async function runSetup(context: vscode.ExtensionContext) {
             const clangdContent = fs.readFileSync(clangdSrc, 'utf8');
             const formatContent = fs.readFileSync(formatSrc, 'utf8');
 
-            createFile(path.join(paths.projectRoot, '.clangd'), clangdContent);
-            createFile(path.join(paths.projectRoot, '.clang-format'), formatContent);
+            writeFile(path.join(paths.projectRoot, '.clangd'), clangdContent);
+            writeFileIfMissing(path.join(paths.projectRoot, '.clang-format'), formatContent);
 
             try {
-                createFile(path.join(paths.engineRoot, '.clangd'), clangdContent);
+                writeFile(path.join(paths.engineRoot, '.clangd'), clangdContent);
             } catch (e) {
                 vscode.window.showWarningMessage(`Could not write .clangd to Engine root. Run VSCode as Admin if needed.`);
             }
@@ -108,10 +105,7 @@ async function runSetup(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage("UE Clangd Helper: Setup initiated. Build task running...");
 }
 
-// --- Helper Functions ---
-
 async function triggerTask(taskName: string) {
-    // We must fetch tasks from VSCode's internal list to run them
     const tasks = await vscode.tasks.fetchTasks();
     const task = tasks.find(t => t.name === taskName);
     if (task) {
@@ -142,10 +136,10 @@ async function syncCompileCommands() {
     }
 }
 
-async function injectTasks(paths: any) {
+async function injectTasks(paths: WorkspacePaths) {
     const buildBat = path.join(paths.engineRoot, 'Engine', 'Build', 'BatchFiles', 'Build.bat');
     const uproject = path.join(paths.projectRoot, `${paths.projectName}.uproject`);
-    const manifest = path.join( paths.projectRoot, 'Intermediate', 'Build', 'Win64', `${paths.projectName}Editor`, 'Development', `${paths.projectName}Editor.uhtmanifest` );
+    const manifest = path.join(paths.projectRoot, 'Intermediate', 'Build', 'Win64', `${paths.projectName}Editor`, 'Development', `${paths.projectName}Editor.uhtmanifest`);
 
     const newTasks = [
         {
@@ -206,7 +200,6 @@ async function injectTasks(paths: any) {
         }
     }
 
-    // Update or add tasks
     newTasks.forEach(nt => {
         const idx = tasksJson.tasks.findIndex((et: any) => et.label === nt.label);
         if (idx !== -1) {
@@ -223,8 +216,6 @@ async function injectTasks(paths: any) {
 function hasPhantomErrors(fileUri: vscode.Uri): boolean {
     const diagnostics = vscode.languages.getDiagnostics(fileUri);
 
-    // We look for errors related to missing .generated.h files or UHT-specific failures
-    // These are identified by clang error codes: ovl_deleted_init and missing_type_specifier
     return diagnostics.some(diagnostic => {
         const errorCode = typeof diagnostic.code === 'string'
             ? diagnostic.code
@@ -238,8 +229,10 @@ function hasPhantomErrors(fileUri: vscode.Uri): boolean {
     });
 }
 
-function getWorkspacePaths() {
-    if (!vscode.workspace.workspaceFolders) return null;
+function getWorkspacePaths(): WorkspacePaths | null {
+    if (!vscode.workspace.workspaceFolders) {
+        return null;
+    }
 
     let projectRoot = '';
     let engineRoot = '';
@@ -248,8 +241,9 @@ function getWorkspacePaths() {
     for (const folder of vscode.workspace.workspaceFolders) {
         const fsPath = folder.uri.fsPath;
         try {
-            // Safety check: ensure it is actually a folder
-            if (!fs.statSync(fsPath).isDirectory()) continue;
+            if (!fs.statSync(fsPath).isDirectory()) {
+                continue;
+            }
 
             const files = fs.readdirSync(fsPath);
             const uproject = files.find(f => f.endsWith('.uproject'));
@@ -267,7 +261,6 @@ function getWorkspacePaths() {
         }
     }
 
-    // Strict return: All must be found, or we return null
     if (projectRoot && engineRoot && projectName) {
         return { projectRoot, engineRoot, projectName };
     }
@@ -275,8 +268,28 @@ function getWorkspacePaths() {
     return null;
 }
 
-function createFile(filePath: string, content: string) {
+function getRequiredWorkspacePaths(): WorkspacePaths | null {
+    const paths = getWorkspacePaths();
+    if (!paths) {
+        showMissingPathsError();
+    }
+
+    return paths;
+}
+
+function writeFile(filePath: string, content: string) {
     fs.writeFileSync(filePath, content, 'utf8');
+}
+
+function writeFileIfMissing(filePath: string, content: string) {
+    if (!fs.existsSync(filePath)) {
+        writeFile(filePath, content);
+    }
+}
+
+function isPathInsideDirectory(filePath: string, directoryPath: string) {
+    const relativePath = path.relative(directoryPath, filePath);
+    return relativePath !== '' && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
 }
 
 function showMissingPathsError() {

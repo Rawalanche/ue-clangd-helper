@@ -10,6 +10,8 @@ UseTab: ForIndentation
 IndentWidth: 4
 TabWidth: 4
 AccessModifierOffset: -4
+IndentCaseLabels: true
+NamespaceIndentation: All
 
 # Braces on new lines (Allman)
 BreakBeforeBraces: Allman
@@ -21,5 +23,6 @@ ColumnLimit: 0
 PointerAlignment: Left
 ReferenceAlignment: Left
 
-# Preserve explicit include order
-SortIncludes: false
+# Sort includes alphabetically, but keep existing include blocks separate
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve

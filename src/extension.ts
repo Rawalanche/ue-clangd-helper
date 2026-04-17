@@ -82,11 +82,11 @@ async function runSetup(context: vscode.ExtensionContext) {
             const clangdContent = fs.readFileSync(clangdSrc, 'utf8');
             const formatContent = fs.readFileSync(formatSrc, 'utf8');
 
-            writeFile(path.join(paths.projectRoot, '.clangd'), clangdContent);
+            writeFileIfMissing(path.join(paths.projectRoot, '.clangd'), clangdContent);
             writeFileIfMissing(path.join(paths.projectRoot, '.clang-format'), formatContent);
 
             try {
-                writeFile(path.join(paths.engineRoot, '.clangd'), clangdContent);
+                writeFileIfMissing(path.join(paths.engineRoot, '.clangd'), clangdContent);
             } catch (e) {
                 vscode.window.showWarningMessage(`Could not write .clangd to Engine root. Run VSCode as Admin if needed.`);
             }

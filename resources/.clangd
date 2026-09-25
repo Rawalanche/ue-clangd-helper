@@ -6,3 +6,5 @@ CompileFlags:
   Add: [-D__INTELLISENSE__, --driver-mode=cl, -fno-delayed-template-parsing] # Added flag for MSVC compatibility speed
 Completion:
   AllScopes: false
+Documentation:
+  CommentFormat: Doxygen
